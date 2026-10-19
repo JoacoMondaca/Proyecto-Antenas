@@ -1,0 +1,8 @@
+# Ignore ANSYS simulation results
+*.aedtresults/
+*.lock
+*.semaphore
+
+# Ignore Python temporary files
+__pycache__/
+*.pyc
