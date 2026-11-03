@@ -1,0 +1,3 @@
+Datos SINTETICOS (no son mediciones).
+Formato: uint32 little-endian, tramas de 1024 canales (orden natural de la FFT), banda de 5 MHz centrada en 1420.0 MHz.
+observaciones.csv: file,kind,t_utc,az_deg,el_deg,n_int  (kind: hot, cold, sky). Cada hot va seguido de su cold.
