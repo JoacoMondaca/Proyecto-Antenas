@@ -1,0 +1,6 @@
+vhdl xil_defaultlib  \
+"../../../bd/rfsoc_radiotelescopio/ip/rfsoc_radiotelescopio_xfft_0_0/sim/rfsoc_radiotelescopio_xfft_0_0.vhd" \
+"../../../bd/rfsoc_radiotelescopio/ip/rfsoc_radiotelescopio_axi_dma_0_0/sim/rfsoc_radiotelescopio_axi_dma_0_0.vhd" \
+"../../../bd/rfsoc_radiotelescopio/ip/rfsoc_radiotelescopio_rst_ps8_0_100M_0/sim/rfsoc_radiotelescopio_rst_ps8_0_100M_0.vhd" \
+
+nosort

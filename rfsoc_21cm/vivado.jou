@@ -1,0 +1,13 @@
+#-----------------------------------------------------------
+# Vivado v2020.1 (64-bit)
+# SW Build 2902540 on Wed May 27 19:54:49 MDT 2020
+# IP Build 2902112 on Wed May 27 22:43:36 MDT 2020
+# Start of session at: Tue Nov  3 13:27:28 2026
+# Process ID: 42412
+# Current directory: C:/Users/vicen/OneDrive/Escritorio
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent5172 C:\Users\vicen\OneDrive\Escritorio\rfsoc_21cm_backend.xpr
+# Log file: C:/Users/vicen/OneDrive/Escritorio/vivado.log
+# Journal file: C:/Users/vicen/OneDrive/Escritorio\vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.xpr

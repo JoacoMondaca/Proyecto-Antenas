@@ -1,0 +1,16 @@
+Vivado Simulator 2020.1
+Copyright 1986-1999, 2001-2020 Xilinx, Inc. All Rights Reserved.
+Running: C:/Xilinx/Vivado/2020.1/bin/unwrapped/win64.o/xelab.exe -wto 3c92b0c2fbf64622a606380ea32c6880 --incr --debug typical --relax --mt 2 -L xil_defaultlib -L axi_infrastructure_v1_1_0 -L axi_vip_v1_1_7 -L zynq_ultra_ps_e_vip_v1_0_7 -L xbip_utils_v3_0_10 -L axi_utils_v2_0_6 -L c_reg_fd_v12_0_6 -L xbip_dsp48_wrapper_v3_0_4 -L xbip_pipe_v3_0_6 -L xbip_dsp48_addsub_v3_0_6 -L xbip_addsub_v3_0_6 -L c_addsub_v12_0_14 -L c_mux_bit_v12_0_6 -L c_shift_ram_v12_0_14 -L xbip_bram18k_v3_0_6 -L mult_gen_v12_0_16 -L cmpy_v6_0_18 -L floating_point_v7_0_17 -L xfft_v9_1_4 -L lib_pkg_v1_0_2 -L fifo_generator_v13_2_5 -L lib_fifo_v1_0_14 -L lib_srl_fifo_v1_0_2 -L lib_cdc_v1_0_2 -L axi_datamover_v5_1_23 -L axi_sg_v4_1_13 -L axi_dma_v7_1_22 -L generic_baseblocks_v2_1_0 -L axi_register_slice_v2_1_21 -L axi_data_fifo_v2_1_20 -L axi_crossbar_v2_1_22 -L proc_sys_reset_v5_0_13 -L xlconstant_v1_1_7 -L axi_protocol_converter_v2_1_21 -L axi_clock_converter_v2_1_20 -L blk_mem_gen_v8_4_4 -L axi_dwidth_converter_v2_1_21 -L xilinx_vip -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_dsp_subsystem_behav xil_defaultlib.tb_dsp_subsystem xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+ERROR: [VRFC 10-3180] cannot find port 'm_axis_tlast' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:40]
+ERROR: [VRFC 10-3180] cannot find port 'm_axis_tready' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:39]
+ERROR: [VRFC 10-3180] cannot find port 'm_axis_tvalid' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:38]
+ERROR: [VRFC 10-3180] cannot find port 'm_axis_tdata' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:37]
+ERROR: [VRFC 10-3180] cannot find port 's_axis_tlast' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:34]
+ERROR: [VRFC 10-3180] cannot find port 's_axis_tready' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:33]
+ERROR: [VRFC 10-3180] cannot find port 's_axis_tvalid' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:32]
+ERROR: [VRFC 10-3180] cannot find port 's_axis_tdata' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:31]
+ERROR: [VRFC 10-3180] cannot find port 'aresetn' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:28]
+ERROR: [VRFC 10-3180] cannot find port 'aclk' on this module [C:/Users/vicen/OneDrive/Escritorio/rfsoc_21cm_backend.srcs/sim_1/new/tb_dsp_subsystem.sv:27]
