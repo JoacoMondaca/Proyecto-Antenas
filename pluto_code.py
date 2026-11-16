@@ -25,9 +25,12 @@ Ejemplos:
     # Prueba sin hardware
     python hi21cm_pluto.py --sim --time 10
 """
-
+import ctypes.util
+_find = ctypes.util.find_library
+ctypes.util.find_library = lambda n: r"C:\Windows\System32\libiio.dll" if "iio" in n else _find(n)
 import argparse
 import os
+#os.add_dll_directory(r"C:\Windows\System32\libiio.dll")
 import sys
 import time
 from datetime import datetime, timezone
