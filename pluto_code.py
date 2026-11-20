@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#ip pluto sdr+ 17: 192.168.2.1
 """
 hi21cm_pluto.py - Medicion de la linea de 21 cm del hidrogeno neutro (HI)
 con una Pluto SDR / Pluto+.
@@ -25,16 +25,12 @@ Ejemplos:
     # Prueba sin hardware
     python hi21cm_pluto.py --sim --time 10
 """
-import ctypes.util
-_find = ctypes.util.find_library
-ctypes.util.find_library = lambda n: r"C:\Windows\System32\libiio.dll" if "iio" in n else _find(n)
 import argparse
 import os
 #os.add_dll_directory(r"C:\Windows\System32\libiio.dll")
 import sys
 import time
 from datetime import datetime, timezone
-
 import numpy as np
 
 F_HI = 1420.405751768e6      # Hz, frecuencia en reposo de la linea HI
