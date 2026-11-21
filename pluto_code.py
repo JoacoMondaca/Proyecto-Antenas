@@ -1,4 +1,4 @@
-#ip pluto sdr+ 17: 192.168.2.1
+#!/usr/bin/env python3
 """
 hi21cm_pluto.py - Medicion de la linea de 21 cm del hidrogeno neutro (HI)
 con una Pluto SDR / Pluto+.
@@ -25,13 +25,21 @@ Ejemplos:
     # Prueba sin hardware
     python hi21cm_pluto.py --sim --time 10
 """
+
 import argparse
 import os
-#os.add_dll_directory(r"C:\Windows\System32\libiio.dll")
 import sys
 import time
 from datetime import datetime, timezone
+
 import numpy as np
+
+# Windows: ayuda a las bindings de Python a encontrar libiio.dll
+if sys.platform == "win32" and os.path.exists(r"C:\Windows\System32\libiio.dll"):
+    import ctypes.util
+    _find = ctypes.util.find_library
+    ctypes.util.find_library = (
+        lambda n: r"C:\Windows\System32\libiio.dll" if "iio" in n else _find(n))
 
 F_HI = 1420.405751768e6      # Hz, frecuencia en reposo de la linea HI
 C_KMS = 299792.458           # km/s
@@ -55,8 +63,8 @@ def parse_args():
                    help="ganancia RX manual en dB (0-73 aprox.) [60]")
     p.add_argument("--nfft", type=int, default=2048,
                    help="canales del espectro [2048]")
-    p.add_argument("--nblocks", type=int, default=512,
-                   help="FFTs por buffer (buffer = nfft*nblocks muestras) [512]")
+    p.add_argument("--nblocks", type=int, default=64,
+                   help="FFTs por buffer (buffer = nfft*nblocks muestras) [64]")
     p.add_argument("--ref", default=None,
                    help="archivo .npz de referencia (OFF) para calcular ON/OFF - 1")
     p.add_argument("--tsys", type=float, default=None,
@@ -75,32 +83,81 @@ class PlutoSource:
     """Receptor Pluto / Pluto+ usando pyadi-iio."""
 
     def __init__(self, uri, fs, lo, gain, bufsize):
+        self.cfg = (uri, fs, lo, gain, bufsize)
+        # Si la Pluto se cae al configurarse, se espera a que vuelva y se reintenta
+        try:
+            self._open()
+        except (OSError, ConnectionError) as e:
+            print(f"\n  ! La Pluto se desconecto al configurarse ({e}).")
+            print("  Esperando a que vuelva y reintentando (hasta 2 min)...", flush=True)
+            if not self.reconnect(timeout=120):
+                sys.exit("  ! No se pudo configurar la Pluto. Revisa su alimentacion "
+                         "(cargador del notebook / segundo puerto USB a un cargador).")
+
+    def reconnect(self, timeout=120):
+        """Reabre la conexion tras una caida (p.ej. la Pluto se reinicio)."""
+        self.close()
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            time.sleep(float(os.environ.get("HI_RETRY_S", 5)))
+            try:
+                self._open()
+                return True
+            except Exception:
+                print("    ... la Pluto aun no responde, reintentando", flush=True)
+        return False
+
+    def _open(self):
+        uri, fs, lo, gain, bufsize = self.cfg
         try:
             import adi
         except ImportError:
             sys.exit("Falta pyadi-iio:  pip install pyadi-iio")
 
-        self.sdr = adi.Pluto(uri=uri)
+        def step(msg, fn):
+            # Se imprime cada paso: si la Pluto se cae, el ultimo mensaje dice en cual
+            print(f"    config: {msg} ...", end="", flush=True)
+            fn()
+            print(" ok", flush=True)
+
+        step("conexion", lambda: setattr(self, "sdr", adi.Pluto(uri=uri)))
         s = self.sdr
         s.rx_enabled_channels = [0]
-        s.sample_rate = int(fs)
-        s.rx_rf_bandwidth = int(fs)
-        s.rx_lo = int(lo)
+
+        # Apagar el transmisor (atenuacion maxima + sintetizador TX apagado):
+        # menos consumo y nada de fuga hacia el receptor
+        def tx_off():
+            try:
+                s.tx_hardwaregain_chan0 = -89.0
+                s._set_iio_attr("altvoltage1", "powerdown", True, 1)   # TX_LO
+            except Exception:
+                pass
+        step("apagar TX", tx_off)
+
+        def set_if_changed(attr, value, tol):
+            # La Pluto recuerda su configuracion entre ejecuciones: si ya esta bien,
+            # no se reescribe, y se evita la recalibracion (y su peak de consumo)
+            try:
+                if abs(float(getattr(s, attr)) - value) <= tol:
+                    print(" (ya configurado)", end="")
+                    return
+            except Exception:
+                pass
+            setattr(s, attr, int(value))
+
+        step(f"sample_rate = {fs/1e6:g} MHz", lambda: set_if_changed("sample_rate", fs, 1))
+        step("ancho de banda RF", lambda: set_if_changed("rx_rf_bandwidth", fs, fs * 0.02))
+        step(f"LO RX = {lo/1e6:.4f} MHz", lambda: set_if_changed("rx_lo", lo, 1))
         # Ganancia MANUAL: con AGC la escala de potencia cambiaria durante la medicion
-        s.gain_control_mode_chan0 = "manual"
-        s.rx_hardwaregain_chan0 = float(gain)
+        step("ganancia manual", lambda: setattr(s, "gain_control_mode_chan0", "manual"))
+        step(f"ganancia = {gain:g} dB", lambda: setattr(s, "rx_hardwaregain_chan0", float(gain)))
         s.rx_buffer_size = int(bufsize)
 
-        # Silenciar el transmisor para que no se filtre al receptor
-        try:
-            s.tx_hardwaregain_chan0 = -89.0
-            s.tx_lo = int(lo + 400e6)
-        except Exception:
-            pass
-
         # Descartar los primeros buffers (transitorios del sintetizador/filtros)
-        for _ in range(5):
-            s.rx()
+        def warmup():
+            for _ in range(5):
+                s.rx()
+        step(f"primer buffer ({bufsize} muestras)", warmup)
 
     def read(self):
         return self.sdr.rx()
@@ -110,6 +167,7 @@ class PlutoSource:
             self.sdr.rx_destroy_buffer()
         except Exception:
             pass
+        self.sdr = None
 
 
 class SimSource:
@@ -124,6 +182,9 @@ class SimSource:
             fline = F_HI - lo - 60e3            # linea desplazada ~ +13 km/s
             shape = shape * (1 + 0.04 * np.exp(-0.5 * ((f - fline) / 80e3) ** 2))
         self.h = np.sqrt(shape)
+
+    def reconnect(self, timeout=120):
+        return True
 
     def read(self):
         w = self.rng.standard_normal(self.n) + 1j * self.rng.standard_normal(self.n)
@@ -150,12 +211,26 @@ def integrate(src, fs, nfft, t_int):
 
     t0 = time.time()
     t_print = t0
+    n_drops = 0
     try:
         while True:
             now = time.time()
-            if now - t0 >= t_int:
+            t_eff = nspec * nfft / fs
+            # Se integra hasta juntar t_int segundos de SEÑAL (asi una caida
+            # no acorta la medicion), con un tope de 3*t_int de reloj.
+            if t_eff >= t_int or now - t0 >= 3 * t_int:
                 break
-            x = np.asarray(src.read())
+            try:
+                x = np.asarray(src.read())
+            except (OSError, ConnectionError) as e:
+                n_drops += 1
+                print(f"\n  ! Se perdio la conexion con la Pluto ({e}). "
+                      f"Caida #{n_drops}, reconectando...", flush=True)
+                if n_drops > 5 or not src.reconnect():
+                    print("  ! No se pudo reconectar: se guarda lo integrado hasta ahora.")
+                    break
+                print("  Reconectado, se sigue integrando.", flush=True)
+                continue
             m = (len(x) // nfft) * nfft
             if m == 0:
                 continue
@@ -172,8 +247,8 @@ def integrate(src, fs, nfft, t_int):
 
             if now - t_print >= 10:
                 t_print = now
-                print(f"  {now - t0:6.0f} / {t_int:.0f} s   espectros promediados: {nspec}",
-                      flush=True)
+                print(f"  {nspec * nfft / fs:6.0f} / {t_int:.0f} s de señal   "
+                      f"espectros promediados: {nspec}", flush=True)
     except KeyboardInterrupt:
         print("\nInterrumpido: se guarda lo integrado hasta ahora.")
 
@@ -187,6 +262,7 @@ def integrate(src, fs, nfft, t_int):
         t_eff=nspec * nfft / fs,                   # tiempo de señal realmente integrado
         peak=peak,
         rms=float(np.sqrt(pwr_sum / max(nbuf, 1))),
+        drops=n_drops,
     )
     return psd, stats
 
@@ -278,6 +354,9 @@ def main():
     print(f"\nEspectros promediados: {st['nspec']}")
     print(f"Tiempo de señal integrado: {st['t_eff']:.1f} s de {st['t_wall']:.1f} s de reloj "
           f"({100*st['t_eff']/st['t_wall']:.0f} % ciclo util)")
+    if st["drops"]:
+        print(f"  AVISO: la Pluto se desconecto {st['drops']} vez/veces durante la medicion "
+              "(revisa alimentacion USB / cable)")
     print(f"Nivel ADC: rms = {st['rms']:.0f}, pico = {st['peak']:.0f} (fondo de escala 2047)")
     if st["peak"] >= 2000:
         print("  AVISO: el ADC esta saturando -> baja --gain")
